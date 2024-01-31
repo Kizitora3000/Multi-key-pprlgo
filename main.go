@@ -44,7 +44,7 @@ func main() {
 	Agt := qlearn.NewAgent()
 	Agt.LenQ = MAX_ACTIONS
 
-	dirname := "./dataset/preprocessed_diabetes_SRL_dataset"
+	dirname := "preprocessed_diabetes_SRL_dataset"
 
 	files, err := os.ReadDir(dirname)
 	if err != nil {
@@ -55,7 +55,7 @@ func main() {
 	encryptedQtable := make([]*mkckks.Ciphertext, Agt.LenQ)
 	for i := 0; i < Agt.LenQ; i++ {
 		plaintext := mkckks.NewMessage(testContext.Params)
-		for i := 0; i < 1<<testContext.Params.LogSlots(); i++ {
+		for i := 0; i < Agt.Nact; i++ {
 			plaintext.Value[i] = complex(Agt.InitValQ, 0) // 虚部は0
 		}
 
@@ -85,14 +85,18 @@ func main() {
 		// Exclude the last row
 		records = records[:len(records)-1]
 
-		for _, record := range records {
+		for i, record := range records {
+			if i == 0 {
+				// 1行目はカラムの情報なのでスキップ
+				continue
+			}
+
 			status, _ := strconv.Atoi(record[1])
 			action, _ := strconv.Atoi(record[2])
 			rwd, _ := strconv.ParseFloat(record[3], 64)
-			next_status, _ := strconv.Atoi(record[4])
-
-			fmt.Println(status, action, rwd, next_status)
-			// Agt.Learn(status, action, rwd, next_status, ckksKeyTools, encryptedQtable)
+			next_status_float, _ := strconv.ParseFloat(record[4], 64)
+			next_status := int(next_status_float)
+			Agt.Learn(status, action, rwd, next_status, testContext, encryptedQtable, user_list)
 		}
 	}
 }
