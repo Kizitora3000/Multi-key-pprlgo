@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/csv"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"mk-lattigo/mkckks"
 	"mk-lattigo/mkrlwe"
 	"mk-lattigo/qlearn"
@@ -60,7 +62,7 @@ func main() {
 	encryptedQtable := make([]*mkckks.Ciphertext, Agt.LenQ)
 	for i := 0; i < Agt.LenQ; i++ {
 		plaintext := mkckks.NewMessage(testContext.Params)
-		for i := 0; i < Agt.Nact; i++ {
+		for i := 0; i < (1 << testContext.Params.LogSlots()); i++ {
 			plaintext.Value[i] = complex(Agt.InitValQ, 0) // 虚部は0
 		}
 
@@ -95,6 +97,7 @@ func main() {
 				// 1行目はカラムの情報なのでスキップ
 				continue
 			}
+
 			startTime := time.Now()
 
 			status, _ := strconv.Atoi(record[1])
@@ -102,10 +105,61 @@ func main() {
 			rwd, _ := strconv.ParseFloat(record[3], 64)
 			next_status_float, _ := strconv.ParseFloat(record[4], 64)
 			next_status := int(next_status_float)
+			// next_status, _ := strconv.Atoi(record[4])
 			Agt.Learn(status, action, rwd, next_status, testContext, encryptedQtable, user_list)
 
 			duration := time.Since(startTime)
 			fmt.Printf("file: %s\tindex:%d\ttime:%s\n", file.Name(), i, duration)
 		}
+	}
+
+	// 暗号化したQテーブルのQ値
+	Qtable := [][]float64{}
+	for i := 0; i < Agt.LenQ; i++ {
+		plaintext := testContext.Decryptor.Decrypt(encryptedQtable[i], testContext.SkSet)
+		plaintext_real := make([]float64, Agt.Nact)
+		for j := 0; j < Agt.Nact; j++ {
+			if j == Agt.Nact {
+				continue
+			}
+			plaintext_real[j] = real(plaintext.Value[j])
+
+		}
+		Qtable = append(Qtable, plaintext_real)
+	}
+
+	jsonData, err := json.Marshal(Qtable)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	err = ioutil.WriteFile("pprl_data.json", jsonData, 0644)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// ユーザ側のQ値
+	AgtQtable := [][]float64{}
+	for i := 0; i < Agt.LenQ; i++ {
+		if _, isExist := Agt.Q[i]; !isExist {
+			Agt.Q[i] = make([]float64, Agt.Nact)
+			for j := 0; j < Agt.Nact; j++ {
+				Agt.Q[i][j] = Agt.InitValQ
+			}
+		}
+
+		AgtQtable = append(AgtQtable, Agt.Q[i])
+	}
+
+	AgtjsonData, err := json.Marshal(AgtQtable)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	err = ioutil.WriteFile("rl_data.json", AgtjsonData, 0644)
+	if err != nil {
+		fmt.Println(err)
 	}
 }

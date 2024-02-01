@@ -61,6 +61,14 @@ var (
 		LogSlots: 6,
 		Scale:    1 << 30,
 	}
+
+	PPRL_PARAMS = ckks.ParametersLiteral{
+		LogN:     13,                // 13
+		LogQ:     []int{35, 60, 60}, // []int{55, 40, 40},
+		LogP:     []int{45, 45},
+		LogSlots: 6,
+		Scale:    1 << 30,
+	}
 )
 
 type TestParams struct {
