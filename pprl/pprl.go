@@ -57,25 +57,13 @@ func SecureQtableUpdating(v_t []float64, w_t []float64, Q_new float64, Nv int, N
 		fhe_v_and_w_Qold := testContext.Evaluator.MulRelinNew(fhe_v_t, fhe_w_t, testContext.RlkSet)
 		fhe_v_and_w_Qold = testContext.Evaluator.MulRelinNew(fhe_v_and_w_Qold, EncryptedQtable[i], testContext.RlkSet)
 
-		/*
-			decrypt_fhe_v_and_w_Qnew := doublenc.FHEdec(params, encoder, decryptor, fhe_v_and_w_Qnew)
-			realValues1 := make([]float64, len(decrypt_fhe_v_and_w_Qnew))
-			for i, v := range decrypt_fhe_v_and_w_Qnew {
-				realValues1[i] = real(v)
-			}
-			re_fhe_v_and_w_Qnew := doublenc.FHEenc(params, encoder, encryptor, realValues1)
+		// ノイズ増加を防ぐため復号して除去する
+		decrypt_fhe_v_and_w_Qnew := testContext.Decryptor.Decrypt(fhe_v_and_w_Qnew, testContext.SkSet)
+		re_fhe_v_and_w_Qnew := testContext.Encryptor.EncryptMsgNew(decrypt_fhe_v_and_w_Qnew, testContext.PkSet.GetPublicKey(user_list[1]))
+		decrypt_fhe_v_and_w_Qold := testContext.Decryptor.Decrypt(fhe_v_and_w_Qold, testContext.SkSet)
+		re_fhe_v_and_w_Qold := testContext.Encryptor.EncryptMsgNew(decrypt_fhe_v_and_w_Qold, testContext.PkSet.GetPublicKey(user_list[1]))
 
-			decrypt_fhe_v_and_w_Qold := doublenc.FHEdec(params, encoder, decryptor, fhe_v_and_w_Qold)
-			realValues2 := make([]float64, len(decrypt_fhe_v_and_w_Qold))
-			for i, v := range decrypt_fhe_v_and_w_Qold {
-				realValues2[i] = real(v)
-			}
-			re_fhe_v_and_w_Qold := doublenc.FHEenc(params, encoder, encryptor, realValues2)
-		*/
-
-		// EncryptedQtalbe[i]がノイズで爆発する
-		EncryptedQtable[i] = testContext.Evaluator.AddNew(EncryptedQtable[i], fhe_v_and_w_Qnew)
-		EncryptedQtable[i] = testContext.Evaluator.SubNew(EncryptedQtable[i], fhe_v_and_w_Qold)
+		EncryptedQtable[i] = testContext.Evaluator.AddNew(EncryptedQtable[i], re_fhe_v_and_w_Qnew)
+		EncryptedQtable[i] = testContext.Evaluator.SubNew(EncryptedQtable[i], re_fhe_v_and_w_Qold)
 	}
-
 }

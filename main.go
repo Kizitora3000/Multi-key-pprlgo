@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"github.com/ldsec/lattigo/v2/ckks"
 )
@@ -20,7 +21,11 @@ var (
 )
 
 func main() {
-	ckks_params, err := ckks.NewParametersFromLiteral(utils.PN14QP439) // 128 bit security
+	// 128 bit security
+	// ckks_params, err := ckks.NewParametersFromLiteral(utils.PN14QP439)
+
+	// Q値の確認用(pprlと同じかどうか)
+	ckks_params, err := ckks.NewParametersFromLiteral(utils.FAST_BUT_NOT_128)
 	if err != nil {
 		panic(err)
 	}
@@ -90,6 +95,7 @@ func main() {
 				// 1行目はカラムの情報なのでスキップ
 				continue
 			}
+			startTime := time.Now()
 
 			status, _ := strconv.Atoi(record[1])
 			action, _ := strconv.Atoi(record[2])
@@ -97,6 +103,9 @@ func main() {
 			next_status_float, _ := strconv.ParseFloat(record[4], 64)
 			next_status := int(next_status_float)
 			Agt.Learn(status, action, rwd, next_status, testContext, encryptedQtable, user_list)
+
+			duration := time.Since(startTime)
+			fmt.Printf("file: %s\tindex:%d\ttime:%s\n", file.Name(), i, duration)
 		}
 	}
 }

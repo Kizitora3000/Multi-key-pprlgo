@@ -53,6 +53,14 @@ var (
 		Scale: 1 << 52,
 		Sigma: rlwe.DefaultSigma,
 	}
+
+	FAST_BUT_NOT_128 = ckks.ParametersLiteral{
+		LogN:     7,
+		LogQ:     []int{35, 60, 60},
+		LogP:     []int{45, 45},
+		LogSlots: 6,
+		Scale:    1 << 30,
+	}
 )
 
 type TestParams struct {
