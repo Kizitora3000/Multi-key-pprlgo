@@ -27,7 +27,7 @@ func main() {
 	// ckks_params, err := ckks.NewParametersFromLiteral(utils.PN14QP439)
 
 	// Q値の確認用(pprlと同じかどうか)
-	ckks_params, err := ckks.NewParametersFromLiteral(utils.FAST_BUT_NOT_128)
+	ckks_params, err := ckks.NewParametersFromLiteral(utils.PPRL_PARAMS) // utils.FAST_BUT_NOT_128
 	if err != nil {
 		panic(err)
 	}

@@ -1,8 +1,10 @@
 package pprl
 
 import (
+	"fmt"
 	"mk-lattigo/mkckks"
 	"mk-lattigo/utils"
+	"time"
 )
 
 func initializeZeros(Na int, params mkckks.Parameters) *mkckks.Message {
@@ -77,8 +79,11 @@ func SecureQtableUpdating(v_t []float64, w_t []float64, Q_new float64, Nv int, N
 	*/
 
 	// Not 並列化
+	var totalDuration time.Duration
 	for i := 0; i < Nv; i++ {
 		fhe_v_t := temp[i]
+
+		fhe_calc_start := time.Now()
 
 		// make Qnew
 		fhe_v_and_w_Qnew := testContext.Evaluator.MulRelinNew(fhe_v_t, fhe_w_t, testContext.RlkSet)
@@ -96,6 +101,10 @@ func SecureQtableUpdating(v_t []float64, w_t []float64, Q_new float64, Nv int, N
 
 		EncryptedQtable[i] = testContext.Evaluator.AddNew(EncryptedQtable[i], re_fhe_v_and_w_Qnew)
 		EncryptedQtable[i] = testContext.Evaluator.SubNew(EncryptedQtable[i], re_fhe_v_and_w_Qold)
+
+		duration_fhe := time.Since(fhe_calc_start)
+		totalDuration += duration_fhe
 	}
+	fmt.Printf("fhe_time: %s\n", totalDuration)
 
 }
